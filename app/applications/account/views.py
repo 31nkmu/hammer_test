@@ -1,63 +1,73 @@
-# import logging
-
 from django.contrib.auth import get_user_model
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from applications.account import serializers
 
 User = get_user_model()
-# logger = logging.getLogger('django_logger')
 
 
 class RegisterApiView(CreateAPIView):
-    # logger.warning('register')
     queryset = User.objects.all()
     serializer_class = serializers.RegisterSerializer
 
+    @swagger_auto_schema(tags=['account'], request_body=serializers.RegisterSerializer)
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
-class ActivationApiView(ListAPIView):
-    def get(self, request, activation_code):
-        try:
-            user = User.objects.get(activation_code=activation_code)
-            user.is_active = True
+
+class FullRegisterAPIView(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = serializers.FullRegisterSerializer
+
+    @swagger_auto_schema(tags=['account'], request_body=serializers.FullRegisterSerializer)
+    def post(self, request):
+        return super().post(request)
+
+
+class ActivationApiView(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = serializers.ActivateSerializer
+
+    @swagger_auto_schema(tags=['account'], request_body=serializers.ActivateSerializer)
+    def post(self, request):
+        code = request.data['code']
+        user = request.user
+        if user.activation_code == code:
+            user.full_registered = True
             user.activation_code = ''
-            user.save(update_fields=['is_active', 'activation_code'])
-            return Response({'msg': 'ваш аккаунт успешно активирован'}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({'msg': 'некоректный код активации'})
+            user.save(update_fields=['activation_code', 'full_registered'])
+            return Response({'msg': 'Вы успешно прошли регистрацию'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'msg': 'Неверный код'})
 
 
 class ChangePasswordApiView(CreateAPIView):
-    # logger.warning('change password')
     queryset = User.objects.all()
     serializer_class = serializers.ChangePasswordSerializer
     permission_classes = [IsAuthenticated]
 
 
 class ForgotPasswordApiView(CreateAPIView):
-    # logger.warning('forgot password')
     queryset = User.objects.all()
     serializer_class = serializers.ForgotPasswordSerializer
 
 
 class ForgotPasswordConfirmApiView(CreateAPIView):
-    # logger.warning('forgot password confirm')
     queryset = User.objects.all()
     serializer_class = serializers.ForgotPasswordConfirmSerializer
 
 
 class ForgotPasswordCodewordApiView(CreateAPIView):
-    # logger.warning('forgot password codeword')
     queryset = User.objects.all()
     serializer_class = serializers.ForgotPasswordCodewordSerializer
 
 
-class ForgotPasswordPhoneApiView(CreateAPIView):
-    # logger.warning('forgot password phone')
-    queryset = User.objects.all()
-    serializer_class = serializers.ForgotPasswordPhoneSerializer
-
+# class ForgotPasswordPhoneApiView(CreateAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = serializers.ForgotPasswordPhoneSerializer
+#
 
 

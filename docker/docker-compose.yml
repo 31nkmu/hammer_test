@@ -7,7 +7,7 @@ services:
       dockerfile: docker/Dockerfile
     command: python3 manage.py runserver 0.0.0.0:8000
     ports:
-      - 8000:8000
+      - ${PORT}:${PORT}
     env_file:
       - ../.env
     depends_on:
@@ -18,7 +18,8 @@ services:
   migration:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.migration
+      dockerfile: docker/Dockerfile
+    command: poetry run python3 manage.py migrate
     depends_on:
       - db
     env_file:
@@ -28,7 +29,7 @@ services:
     restart: unless-stopped
     image: redis:7.0.5-alpine
     expose:
-      - 6379
+      - ${REDIS_PORT}
 
   db:
     image: postgres:14-alpine
@@ -59,7 +60,7 @@ services:
     depends_on:
       - web
     ports:
-      - 5555:5555
+      - ${FLOWER_PORT}:${FLOWER_PORT}
     env_file:
       - ../.env
 

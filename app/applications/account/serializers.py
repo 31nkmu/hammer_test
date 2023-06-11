@@ -11,7 +11,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ('name', 'email', 'password', 'password_repeat')
 
     def validate(self, attrs):
         p1 = attrs.get('password')
@@ -20,27 +20,31 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Пароли не совпадают!')
         return attrs
 
-    @staticmethod
-    def validate_phone_number(phone_number):
-        if not phone_number.startswith('+996'):
-            raise serializers.ValidationError('Ваш номер должен начинаться на +996')
-        if len(phone_number) != 13:
-            raise serializers.ValidationError('Некоректный номер телефона')
-        if not phone_number[1:].isdigit():
-            raise serializers.ValidationError('Некоректный номер телефона')
-        return phone_number
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+        return user
+
+
+class FullRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('last_name', 'birthday', 'phone_number', 'photo')
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            password=validated_data['password'],
-            email=validated_data['email'],
-            is_active=validated_data['is_active'],
-            codeword=validated_data['codeword'],
-            phone_number=validated_data['phone_number']
-        )
-        code = user.activation_code
-        tasks.send_user_activation_link.delay(user.email, code)
+        user = self.context.get('request').user
+        if validated_data.get('phone_number'):
+            user.create_full_register_code()
+            user.save()
+            code = user.activation_code
+            tasks.send_sms.delay(text=code, receiver=validated_data['phone_number'])
+        for k, v in validated_data.items():
+            setattr(user, k, v)
+        user.save()
         return user
+
+
+class ActivateSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=4, required=True, write_only=True)
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -150,26 +154,24 @@ class ForgotPasswordCodewordSerializer(serializers.Serializer):
         return user
 
 
-class ForgotPasswordPhoneSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(required=True)
-
-    @staticmethod
-    def validate_phone_number(phone_number):
-        if not phone_number.startswith('+996'):
-            raise serializers.ValidationError('Ваш номер должен начинаться на +996')
-        if len(phone_number) != 13:
-            raise serializers.ValidationError('Некоректный номер телефона')
-        if not phone_number[1:].isdigit():
-            raise serializers.ValidationError('Некоректный номер телефона')
-        if not User.objects.filter(phone_number=phone_number).exists():
-            raise serializers.ValidationError('Юзера с данным номером не существует')
-        return phone_number
-
-    def create(self, validated_data):
-        user = User.objects.get(phone_number=validated_data['phone_number'])
-        user.create_code_confirm()
-        user.save(update_fields=['activation_code'])
-        tasks.send_code_to_phone.delay(code=user.activation_code, receiver=user.phone_number)
-        return user
-
-
+# class ForgotPasswordPhoneSerializer(serializers.Serializer):
+#     phone_number = serializers.CharField(required=True)
+#
+#     @staticmethod
+#     def validate_phone_number(phone_number):
+#         if not phone_number.startswith('+996'):
+#             raise serializers.ValidationError('Ваш номер должен начинаться на +996')
+#         if len(phone_number) != 13:
+#             raise serializers.ValidationError('Некоректный номер телефона')
+#         if not phone_number[1:].isdigit():
+#             raise serializers.ValidationError('Некоректный номер телефона')
+#         if not User.objects.filter(phone_number=phone_number).exists():
+#             raise serializers.ValidationError('Юзера с данным номером не существует')
+#         return phone_number
+#
+#     def create(self, validated_data):
+#         user = User.objects.get(phone_number=validated_data['phone_number'])
+#         user.create_code_confirm()
+#         user.save(update_fields=['activation_code'])
+#         tasks.send_code_to_phone.delay(code=user.activation_code, receiver=user.phone_number)
+#         return user
