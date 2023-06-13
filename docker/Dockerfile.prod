@@ -21,7 +21,8 @@ RUN apt-get update; \
 
 WORKDIR $APP_HOME
 
-COPY poetry.lock pyproject.toml .
+COPY poetry.lock .
+COPY pyproject.toml .
 RUN poetry install --no-root --no-dev
 
 COPY . .

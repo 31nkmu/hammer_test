@@ -11,7 +11,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('name', 'email', 'password', 'password_repeat')
+        fields = ('username', 'email', 'password', 'password_repeat')
 
     def validate(self, attrs):
         p1 = attrs.get('password')
@@ -152,7 +152,6 @@ class ForgotPasswordCodewordSerializer(serializers.Serializer):
         user.set_password(validated_data['new_password'])
         user.save(update_fields=['password'])
         return user
-
 
 # class ForgotPasswordPhoneSerializer(serializers.Serializer):
 #     phone_number = serializers.CharField(required=True)

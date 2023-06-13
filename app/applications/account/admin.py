@@ -5,7 +5,7 @@ User = get_user_model()
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'phone_number']
+    list_display = ['username', 'email', 'phone_number']
 
 
 admin.site.register(User, UserAdmin)

@@ -10,7 +10,7 @@ services:
       - media_volume:/home/app/web/app/media
     expose:
       - ${PORT}
-    command: poetry run gunicorn --reload --bind ${HOST}:${PORT} --workers ${WORKERS} --log-level ${LEVEL} config.wsgi:application
+    command: poetry run gunicorn --reload --bind 0.0.0.0:8000 --workers ${WORKERS} --log-level ${LEVEL} config.wsgi:application
     env_file:
       - .env
     depends_on:
@@ -23,7 +23,7 @@ services:
   migration:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/Dockerfile.prod
     command: poetry run python3 manage.py migrate
     depends_on:
       - db
