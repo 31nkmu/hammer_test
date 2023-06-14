@@ -21,6 +21,7 @@ class RegisterApiView(CreateAPIView):
 class FullRegisterAPIView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = serializers.FullRegisterSerializer
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(tags=['account'], request_body=serializers.FullRegisterSerializer)
     def post(self, request):
@@ -30,6 +31,7 @@ class FullRegisterAPIView(CreateAPIView):
 class ActivationApiView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = serializers.ActivateSerializer
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(tags=['account'], request_body=serializers.ActivateSerializer)
     def post(self, request):

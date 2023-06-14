@@ -76,7 +76,7 @@ compose-collect-up: compose-up ## Полный запуск контейнеро
 
 .PHONY: compose-createsuperuser
 compose-createsuperuser: ## Создание суперпользователя
-	docker-compose -f docker/docker-compose.prod.yml exec web python3 app/manage.py createsuperuser
+	docker-compose -f docker/docker-compose.prod.yml exec web python3 manage.py createsuperuser
 
 .PHONY: compose-exec
 compose-exec:
