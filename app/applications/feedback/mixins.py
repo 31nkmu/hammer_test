@@ -81,10 +81,10 @@ class LikeMixin:
         return Response({'status': status_, 'user': user.email}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(tags=['like'])
-    @action(methods=['GET'], detail=True)
-    def fans(self, request, pk=None):
-        obj = self.get_object()
-        return Response(services.get_fans(obj=obj), status=status.HTTP_200_OK)
+    @action(methods=['GET'], detail=False)
+    def fans(self, request):
+        user = request.user
+        return Response(services.get_liked(user=user), status=status.HTTP_200_OK)
 
 
 class RatingMixin:

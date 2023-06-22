@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from applications.feedback.models import Rating, Like, Comment, Favorite
-from applications.feedback.serializers import ReviewerSerializer, FanSerializer, CommentSerializer, FavoriteSerializer
+from applications.feedback.serializers import ReviewerSerializer, FanSerializer, CommentSerializer, LikeSerializer
 
 
 # COMMENT ##############################################################################################################
@@ -188,14 +188,14 @@ def is_favorite(obj, user):
         return False
 
 
-def get_favorites(user):
+def get_liked(user):
     """
     Выводит избранных список `obj`
     :param user: пользователь который добавил в избранное
     """
     try:
-        product = Favorite.objects.filter(user=user, is_favorite=True)
-        serializer = FavoriteSerializer(product, many=True)
+        product = Like.objects.filter(user=user, like=True)
+        serializer = LikeSerializer(product, many=True)
         return serializer.data
     except TypeError:
         return []
