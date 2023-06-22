@@ -12,7 +12,7 @@ def give_comment(obj, user, comment):
     :param user: пользователь который комментирует
     :param comment: комментарий
     """
-    comment_obj, is_created = Comment.objects.get_or_create(user=user, electronic=obj)
+    comment_obj, is_created = Comment.objects.get_or_create(user=user, product=obj)
     comment_obj.comment = comment
     comment_obj.save()
     if is_created:
@@ -27,7 +27,7 @@ def del_comment(obj, user):
     :param user: пользователь, комментарий которого удаляют
     """
     try:
-        Comment.objects.get(electronic=obj, user=user).delete()
+        Comment.objects.get(product=obj, user=user).delete()
     except Comment.DoesNotExist:
         pass
 
@@ -39,7 +39,7 @@ def is_commented(obj, user):
     :param user: пользователь
     """
     try:
-        return Comment.objects.filter(user=user, electronic=obj).exists()
+        return Comment.objects.filter(user=user, product=obj).exists()
     except TypeError:
         return False
 
@@ -49,7 +49,7 @@ def get_commentators(obj):
     Выводит список комментаторов и комментариев к `obj`
     :param obj: `obj`, комментарии которого выводятся
     """
-    commentators = Comment.objects.filter(electronic=obj)
+    commentators = Comment.objects.filter(product=obj)
     serializer = CommentSerializer(commentators, many=True)
     commentators = [{'user': i['user'], 'comment': i['comment']} for i in serializer.data]
     return commentators
@@ -62,7 +62,7 @@ def get_comments(user):
     """
     comments = Comment.objects.filter(user=user)
     serializer = CommentSerializer(comments, many=True)
-    comments = [{'electronic': i['electronic'], 'comment': i['comment']} for i in serializer.data]
+    comments = [{'product': i['product'], 'comment': i['comment']} for i in serializer.data]
     return comments
 
 # LIKE #################################################################################################################
@@ -75,7 +75,7 @@ def like_unlike(user, obj):
     :param obj: `obj`, которому ставят лайк
     :return: статус: like/unlike
     """
-    like_obj, is_created = Like.objects.get_or_create(user=user, electronic=obj)
+    like_obj, is_created = Like.objects.get_or_create(user=user, product=obj)
     like_obj.like = not like_obj.like
     like_obj.save()
     if not like_obj.like:
@@ -90,7 +90,7 @@ def is_fan(user, obj):
     :param obj: `obj`, которому пользователь поставил лайк (или не поставил)
     """
     try:
-        like = Like.objects.filter(user=user, electronic=obj)
+        like = Like.objects.filter(user=user, product=obj)
         if like.exists() and like[0].like:
             return True
         return False
@@ -103,7 +103,7 @@ def get_fans(obj):
     Выводит список пользователей, поставивших лайк
     :param obj: `obj` которому поставили лайк
     """
-    fans = Like.objects.filter(electronic=obj, like=True)
+    fans = Like.objects.filter(product=obj, like=True)
     serializer = FanSerializer(fans, many=True)
     return serializer.data
 
@@ -117,7 +117,7 @@ def give_rating(obj, user, rating):
     :param rating: рейтинг который поставил пользователь
     """
     if 0 <= int(rating) <= 5:
-        rating_obj, is_created = Rating.objects.get_or_create(user=user, electronic=obj)
+        rating_obj, is_created = Rating.objects.get_or_create(user=user, product=obj)
         rating_obj.rating = rating
         rating_obj.save()
         if not is_created:
@@ -133,7 +133,7 @@ def del_rating(obj, user):
     :param user: пользователь который удаляет рейтинг
     """
     try:
-        Rating.objects.get(electronic=obj, user=user).delete()
+        Rating.objects.get(product=obj, user=user).delete()
     except Rating.DoesNotExist:
         pass
 
@@ -145,7 +145,7 @@ def is_reviewer(obj, user):
     :param user: пользователь который поставил рейтинг
     """
     try:
-        return Rating.objects.filter(user=user, electronic=obj).exists()
+        return Rating.objects.filter(user=user, product=obj).exists()
     except TypeError:
         return False
 
@@ -155,7 +155,7 @@ def get_reviewers(obj):
     Выводит список пользователей, поставивших рейтинг
     :param obj: `obj` которому поставили рейтинг
     """
-    users = Rating.objects.filter(electronic=obj)
+    users = Rating.objects.filter(product=obj)
     serializer = ReviewerSerializer(users, many=True)
     return serializer.data
 
@@ -168,7 +168,7 @@ def add_del_favorite(obj, user):
     :param obj: `obj` который добавляется
     :param user: пользователь который добавляет/удаляет
     """
-    fav_obj, is_created = Favorite.objects.get_or_create(electronic=obj, user=user)
+    fav_obj, is_created = Favorite.objects.get_or_create(product=obj, user=user)
     fav_obj.is_favorite = not fav_obj.is_favorite
     fav_obj.save()
     if fav_obj.is_favorite:
@@ -179,11 +179,11 @@ def add_del_favorite(obj, user):
 def is_favorite(obj, user):
     """
     Проверяет, находится ли `obj` в избранных у пользователя
-    :param obj: electronic
+    :param obj: product
     :param user: пользователь
     """
     try:
-        return Favorite.objects.filter(electronic=obj, user=user, is_favorite=True).exists()
+        return Favorite.objects.filter(product=obj, user=user, is_favorite=True).exists()
     except TypeError:
         return False
 
@@ -194,8 +194,8 @@ def get_favorites(user):
     :param user: пользователь который добавил в избранное
     """
     try:
-        electronic = Favorite.objects.filter(user=user, is_favorite=True)
-        serializer = FavoriteSerializer(electronic, many=True)
+        product = Favorite.objects.filter(user=user, is_favorite=True)
+        serializer = FavoriteSerializer(product, many=True)
         return serializer.data
     except TypeError:
         return []

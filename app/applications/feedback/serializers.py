@@ -2,13 +2,13 @@ from rest_framework import serializers
 
 
 class FavoriteSerializer(serializers.Serializer):
-    electronic = serializers.CharField()
+    product = serializers.CharField()
 
 
 class CommentSerializer(serializers.Serializer):
     user = serializers.EmailField()
     comment = serializers.CharField()
-    electronic = serializers.CharField()
+    product = serializers.CharField()
 
 
 class FanSerializer(serializers.Serializer):

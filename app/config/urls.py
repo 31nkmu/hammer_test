@@ -26,7 +26,7 @@ schema_view = get_schema_view(
     openapi.Info(
         title="API",
         default_version='v1',
-        description="Electronics store",
+        description="Mobi market",
     ),
     public=True,
 )
@@ -36,6 +36,7 @@ urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger')),
 
     path('api/v1/account/', include('applications.account.urls')),
+    path('api/v1/product/', include('applications.product.urls')),
 ]
 
 urlpatterns += static(

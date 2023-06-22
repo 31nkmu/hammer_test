@@ -47,6 +47,8 @@ INSTALLED_APPS = [
 
     # app
     'applications.account',
+    'applications.product',
+    'applications.feedback',
 ]
 
 CSRF_TRUSTED_ORIGINS = os.environ.get("BACKEND_CORS_ORIGINS", "http://localhost:8000 http://127.0.0.1:8000").split(" ")

@@ -1,4 +1,5 @@
 from django.utils.datastructures import MultiValueDictKeyError
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,6 +9,7 @@ from applications.feedback.services import get_reviewers
 
 
 class FavoriteMixin:
+    @swagger_auto_schema(tags=['favorite'])
     @action(methods=['POST'], detail=True)
     def favorite(self, request, pk=None):
         obj = self.get_object()
@@ -22,6 +24,7 @@ class FavoriteMixin:
             status=status.HTTP_200_OK
         )
 
+    @swagger_auto_schema(tags=['favorite'])
     @action(detail=False, methods=['GET'])
     def get_favorites(self, request):
         product_data = services.get_favorites(user=request.user)
@@ -29,6 +32,7 @@ class FavoriteMixin:
 
 
 class CommentMixin:
+    @swagger_auto_schema(tags=['comment'])
     @action(methods=['POST'], detail=True)
     def give_comment(self, request, pk=None):
         try:
@@ -68,6 +72,7 @@ class CommentMixin:
 
 
 class LikeMixin:
+    @swagger_auto_schema(tags=['like'])
     @action(methods=['POST'], detail=True)
     def like(self, request, pk=None):
         obj = self.get_object()
@@ -75,6 +80,7 @@ class LikeMixin:
         status_ = services.like_unlike(user=user, obj=obj)
         return Response({'status': status_, 'user': user.email}, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(tags=['like'])
     @action(methods=['GET'], detail=True)
     def fans(self, request, pk=None):
         obj = self.get_object()
