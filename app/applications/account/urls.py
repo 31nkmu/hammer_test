@@ -9,6 +9,7 @@ urlpatterns = [
     path('register/', cache_page(60*5)(views.RegisterApiView.as_view())),
     path('full_register/', views.FullRegisterAPIView.as_view()),
     path('confirm/', views.ActivationApiView.as_view()),
+    path('profile/', views.ProfileAPIView.as_view()),
     # path('change_password/', views.ChangePasswordApiView.as_view()),
     # path('forgot_password/', views.ForgotPasswordApiView.as_view()),
     # path('forgot_password_confirm/', views.ForgotPasswordConfirmApiView.as_view()),

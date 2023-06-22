@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from applications.account import serializers
@@ -16,6 +16,17 @@ class RegisterApiView(CreateAPIView):
     @swagger_auto_schema(tags=['account'], request_body=serializers.RegisterSerializer)
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class ProfileAPIView(RetrieveAPIView):
+    @swagger_auto_schema(tags=['account'], request_body=serializers.ProfileSerializer)
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            user = self.request.user
+            serializer = serializers.ProfileSerializer(user, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception:
+            return Response({'msg: только авторизованный пользователь может посмотреть свой профиль'})
 
 
 class FullRegisterAPIView(CreateAPIView):
@@ -66,10 +77,7 @@ class ForgotPasswordCodewordApiView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = serializers.ForgotPasswordCodewordSerializer
 
-
 # class ForgotPasswordPhoneApiView(CreateAPIView):
 #     queryset = User.objects.all()
 #     serializer_class = serializers.ForgotPasswordPhoneSerializer
 #
-
-
