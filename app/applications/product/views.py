@@ -3,6 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -56,6 +57,8 @@ class ProductViewSet(LikeMixin, ModelViewSet):
 
 
 class MyProductAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     def list(self, request, *args, **kwargs):
         user = self.request.user
         if user.full_registered:

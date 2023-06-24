@@ -51,6 +51,7 @@ class CustomUser(AbstractUser):
     activation_code = models.CharField(max_length=4, blank=True)
     phone_number = PhoneNumberField(blank=True, null=True, unique=True)
     photo = models.ImageField(upload_to='images/', null=True, blank=True)
+    first_name = models.CharField(max_length=128, null=True, blank=True)
     last_name = models.CharField(max_length=128, null=True, blank=True)
     birthday = models.DateField(null=True, blank=True)
     full_registered = models.BooleanField(default=False)

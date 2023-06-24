@@ -34,7 +34,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class FullRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('last_name', 'birthday', 'phone_number', 'photo')
+        fields = ('first_name', 'last_name', 'birthday', 'phone_number', 'photo')
 
     def create(self, validated_data):
         user = self.context.get('request').user
