@@ -30,6 +30,7 @@ class ProductSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         files = request.FILES
         instance = super().update(instance, validated_data)
+        instance.images.all().delete()
         for image in files.getlist('images'):
             Image.objects.create(product=instance, image=image)
 
