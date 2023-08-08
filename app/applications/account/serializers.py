@@ -1,182 +1,55 @@
+import time
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from applications.account import tasks
+from phonenumber_field.serializerfields import PhoneNumberField
 
 User = get_user_model()
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(required=True, max_length=128, min_length=6, write_only=True)
-    password_repeat = serializers.CharField(max_length=128, min_length=6, required=True, write_only=True)
+class UserSerializer(serializers.Serializer):
+    phone_number = PhoneNumberField()
+    invite_code = serializers.CharField(max_length=6)
+
+
+class AuthSerializer(serializers.ModelSerializer):
+    new_password = None
+    phone_number = PhoneNumberField()
+    invite_code = serializers.CharField(max_length=6, read_only=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password_repeat')
+        fields = ('phone_number', 'invite_code')
 
-    def validate(self, attrs):
-        p1 = attrs.get('password')
-        p2 = attrs.pop('password_repeat')
-        if p1 != p2:
-            raise serializers.ValidationError('Пароли не совпадают!')
-        return attrs
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if self.new_password is not None:
+            rep['password'] = self.new_password
+        rep['invite_users'] = UserSerializer(instance.children.all(), many=True).data
+        return rep
 
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
-
-
-class FullRegisterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('first_name', 'last_name', 'birthday', 'phone_number', 'photo')
-
-    def create(self, validated_data):
-        user = self.context.get('request').user
-        if validated_data.get('phone_number'):
-            user.create_full_register_code()
-            user.save()
-            code = user.activation_code
-            tasks.send_sms.delay(text=code, receiver=validated_data['phone_number'])
-        for k, v in validated_data.items():
-            setattr(user, k, v)
+        user = User.objects.create(**validated_data)
+        password = user.create_password()
+        self.new_password = password
+        time.sleep(3)
+        user.set_password(password)
+        user.create_invite_code()
         user.save()
         return user
 
 
-class ActivateSerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=4, required=True, write_only=True)
+class AddAnotherUserSerializer(serializers.Serializer):
+    invite_code = serializers.CharField(max_length=6)
 
-
-class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True, min_length=6, write_only=True)
-    new_password = serializers.CharField(required=True, min_length=6, write_only=True)
-    new_password_repeat = serializers.CharField(required=True, min_length=6, write_only=True)
-
-    def validate_old_password(self, old_password):
-        user = self.context.get('request').user
-        if not user.check_password(old_password):
-            raise serializers.ValidationError('Старый пароль введен неверно')
-        return old_password
-
-    def validate(self, attrs):
-        p1 = attrs['new_password']
-        p2 = attrs['new_password_repeat']
-        if p1 != p2:
-            raise serializers.ValidationError('Пароли не совпадают')
-        return attrs
+    def validate_invite_code(self, invite_code):
+        if not User.objects.filter(invite_code=invite_code).exists():
+            raise serializers.ValidationError('Нет пользователя с таким invite code')
+        return invite_code
 
     def create(self, validated_data):
         user = self.context.get('request').user
-        user.set_password(validated_data['new_password'])
-        user.save(update_fields=['password'])
+        user_with_invite_code = User.objects.get(**validated_data)
+        user.parent = user_with_invite_code
+        user.save()
         return user
-
-
-class ForgotPasswordSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-
-    @staticmethod
-    def validate_email(email):
-        if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError('нет такого зарегистрированного пользователя')
-        return email
-
-    def create(self, validated_data):
-        user = User.objects.get(email=validated_data['email'])
-        user.create_code_confirm()
-        user.save(update_fields=['activation_code'])
-        tasks.send_forgot_password_code.delay(email=user.email, activation_code=user.activation_code)
-        return user
-
-
-class ForgotPasswordConfirmSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True, write_only=True)
-    password = serializers.CharField(required=True, write_only=True, min_length=6)
-    password_repeat = serializers.CharField(required=True, write_only=True, min_length=6)
-
-    def validate(self, attrs):
-        p1 = attrs['password']
-        p2 = attrs['password_repeat']
-        if p1 != p2:
-            raise serializers.ValidationError('Пароли не совпадают')
-        return attrs
-
-    @staticmethod
-    def validate_code(code):
-        if not User.objects.filter(activation_code=code).exists():
-            raise serializers.ValidationError('неправельный код подтверждения')
-        return code
-
-    @staticmethod
-    def validate_email(email):
-        if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError('пользователь с данным именем не найден')
-        return email
-
-    def create(self, validated_data):
-        user = User.objects.get(email=validated_data['email'])
-        user.set_password(validated_data['password'])
-        user.activation_code = ''
-        user.save(update_fields=['password', 'activation_code'])
-        return user
-
-
-class ForgotPasswordCodewordSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    codeword = serializers.CharField(required=True, write_only=True)
-    new_password = serializers.CharField(required=True, write_only=True, min_length=6)
-    new_password_repeat = serializers.CharField(required=True, write_only=True, min_length=6)
-
-    def validate(self, attrs):
-        p1 = attrs['new_password']
-        p2 = attrs['new_password_repeat']
-        if p1 != p2:
-            raise serializers.ValidationError('Пароли не совпадают')
-        return attrs
-
-    @staticmethod
-    def validate_codeword(codeword):
-        if not User.objects.filter(codeword=codeword).exists():
-            raise serializers.ValidationError('неправельное секретное слово подтверждения')
-        return codeword
-
-    @staticmethod
-    def validate_email(email):
-        if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError('пользователь с данным именем не найден')
-        return email
-
-    def create(self, validated_data):
-        user = User.objects.get(email=validated_data['email'])
-        user.set_password(validated_data['new_password'])
-        user.save(update_fields=['password'])
-        return user
-
-# class ForgotPasswordPhoneSerializer(serializers.Serializer):
-#     phone_number = serializers.CharField(required=True)
-#
-#     @staticmethod
-#     def validate_phone_number(phone_number):
-#         if not phone_number.startswith('+996'):
-#             raise serializers.ValidationError('Ваш номер должен начинаться на +996')
-#         if len(phone_number) != 13:
-#             raise serializers.ValidationError('Некоректный номер телефона')
-#         if not phone_number[1:].isdigit():
-#             raise serializers.ValidationError('Некоректный номер телефона')
-#         if not User.objects.filter(phone_number=phone_number).exists():
-#             raise serializers.ValidationError('Юзера с данным номером не существует')
-#         return phone_number
-#
-#     def create(self, validated_data):
-#         user = User.objects.get(phone_number=validated_data['phone_number'])
-#         user.create_code_confirm()
-#         user.save(update_fields=['activation_code'])
-#         tasks.send_code_to_phone.delay(code=user.activation_code, receiver=user.phone_number)
-#         return user

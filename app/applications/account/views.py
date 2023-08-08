@@ -1,83 +1,56 @@
+import time
+
 from django.contrib.auth import get_user_model
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
-from rest_framework.response import Response
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from applications.account import serializers
 
 User = get_user_model()
 
 
-class RegisterApiView(CreateAPIView):
+class AuthApiView(CreateAPIView, ListAPIView):
     queryset = User.objects.all()
-    serializer_class = serializers.RegisterSerializer
+    serializer_class = serializers.AuthSerializer
 
-    @swagger_auto_schema(tags=['account'], request_body=serializers.RegisterSerializer)
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+    def perform_create(self, serializer):
+        phone_number = serializer.validated_data['phone_number']
 
-
-class ProfileAPIView(RetrieveAPIView):
-    @swagger_auto_schema(tags=['account'], request_body=serializers.ProfileSerializer)
-    def retrieve(self, request, *args, **kwargs):
         try:
-            user = self.request.user
-            serializer = serializers.ProfileSerializer(user, many=False)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception:
-            return Response({'msg: только авторизованный пользователь может посмотреть свой профиль'})
+            user = User.objects.get(phone_number=phone_number)
+        except User.DoesNotExist:
+            user = None
 
-
-class FullRegisterAPIView(CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = serializers.FullRegisterSerializer
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(tags=['account'], request_body=serializers.FullRegisterSerializer)
-    def post(self, request):
-        return super().post(request)
-
-
-class ActivationApiView(CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = serializers.ActivateSerializer
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(tags=['account'], request_body=serializers.ActivateSerializer)
-    def post(self, request):
-        code = request.data['code']
-        user = request.user
-        if user.activation_code == code:
-            user.full_registered = True
-            user.activation_code = ''
-            user.save(update_fields=['activation_code', 'full_registered'])
-            return Response({'msg': 'Вы успешно прошли регистрацию'}, status=status.HTTP_200_OK)
+        if user:
+            new_password = user.create_password()
+            user.set_password(new_password)
+            user.save()
+            return Response({
+                'phone_number': str(phone_number),
+                'password': new_password,
+                'invite_code': user.invite_code,
+            }, status=status.HTTP_201_CREATED)
         else:
-            return Response({'msg': 'Неверный код'})
+            serializer.save()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        updated_response = self.perform_create(serializer)
+        if updated_response:
+            time.sleep(3)
+            return updated_response
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-class ChangePasswordApiView(CreateAPIView):
+class UserDetailAPIView(RetrieveAPIView):
     queryset = User.objects.all()
-    serializer_class = serializers.ChangePasswordSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.AuthSerializer
 
 
-class ForgotPasswordApiView(CreateAPIView):
+class AddAnotherUserAPIView(CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = serializers.ForgotPasswordSerializer
-
-
-class ForgotPasswordConfirmApiView(CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = serializers.ForgotPasswordConfirmSerializer
-
-
-class ForgotPasswordCodewordApiView(CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = serializers.ForgotPasswordCodewordSerializer
-
-# class ForgotPasswordPhoneApiView(CreateAPIView):
-#     queryset = User.objects.all()
-#     serializer_class = serializers.ForgotPasswordPhoneSerializer
-#
+    serializer_class = serializers.AddAnotherUserSerializer
+    permission_classes = (IsAuthenticated,)
