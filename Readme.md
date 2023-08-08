@@ -1,66 +1,176 @@
-# Vk manga bot
-# Описание проекта
-VK manga Bot - это проект, разработанный с целью автоматизации процесса сбора ссылок на новые группы манг из групп ВКонтакте и ее отправки пользователям. Бот осуществляет парсинг публичных групп ВКонтакте, извлекая нужные пользователю главы манг.
+Для установки потребуются следующие инструменты:
+| Инструмент | Описание |
+|----------|---------|
+| [Python](https://www.python.org/downloads/) |  Язык программирования |
+| [Poetry](https://python-poetry.org/) |  Менеджер зависимостей 
 
-## Основные функции:
-
-
-* **Парсинг публичных групп:**
-
-
-Бот имеет возможность просматривать публичные группы ВКонтакте и собирать информацию, такую как текстовые посты, фотографии, видео и аудиозаписи, публикуемые в этих группах.
-___
-* **Извлечение ссылок на мангу:**
-
-
-Бот сканирует посты и извлекает ссылки для дальнейшей обработки или отправки пользователям.
-___
-* **Отправка данных пользователям:**
-
-
-Бот предоставляет возможность отправки собранных данных пользователям через сообщения в telegram.
-___
-
-## Преимущества проекта:
-
-* **Автоматизация:**
-
-Проект позволяет существенно сократить время и усилия, затрачиваемые на ручной поиск новых глав из групп ВКонтакте, благодаря автоматизированному парсингу данных.
-
-___
-* **Гибкость:**
-
-Пользователь имеет возможность выбора групп, в которых нужно вести поиск.
-___
-* **Удобство:** 
-
-Бот предоставляет удобный интерфейс для взаимодействия с проектом, позволяющий легко настраивать параметры, запускать процесс парсинга и получать собранные данные.
-___
-* **Масштабируемость:**
-
-Проект может быть расширен для работы с различными источниками данных и разными типами платформ, не ограничиваясь только группами ВКонтакте.
-___
-# Установка
 * Склонируй репозиторий используя команду
-```
-git clone git@github.com:31nkmu/vk_manga_bot.git
+```Bash
+# клонировать через HTTPS:
+$ git clone https://github.com/31nkmu/hammer_test.git
+# или клонировать через SSH:
+$ git clone git@github.com:31nkmu/hammer_test.git
+$ cd hammer_test
 ```
 * Создай виртуальное окружение используя команду
-```
-python3 -m venv <name of your environment> 
+```sh
+$ poetry config virtualenvs.in-project true
+$ poetry env use <your_python_version>
 ```
 
 * Активируй виртуальное окружение
-``` 
-source <name of your environment>/bin/activate 
+```sh
+$ source .venv/bin/activate 
 ```
 
 * Установи зависимости
-``` 
-pip install -r requirements.txt 
+```sh
+$ poetry install
 ```
-* Запусти свой проект
-``` 
-python3 main.py
-``` 
----
+* Проведи миграции
+```sh
+$ make migrate
+# создай суперпользователя
+$ make createsuperuser-dev
+```
+
+
+## Запуск через docker-compose
+Тебе понадобятся следующие инструменты
+| Инструмент | Описание |
+|----------|---------|
+| [Docker](https://docs.docker.com/engine/install/ubuntu/) | Докер |
+| [docker-compose](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-compose-on-ubuntu-20-04) | Докер-композ
+Создай .env файл (смотри .env.example)
+```sh
+touch .env
+```
+Создай docker/.env файл (смотри docker/.env.example)
+```sh
+$ touch docker/.env
+```
+
+Запусти свой проект через docker-compose
+```sh
+make compose-collect-up
+# создание суперпользователя в контейнере
+make compose-createsuperuser
+```
+Смотри в Makefile для удобной работы с проектом
+
+
+## Функциональность
+#### Авторизация по номеру телефона:
+
+* Отправьте `POST /api/v1/account/register/` с номером телефона. При успешном выполнении вы получите пароль авторизации.
+  
+```json
+// Пример запроса
+{
+    "phone_number": "+996555802068"
+}
+// Пример ответа
+{
+    "phone_number": "+996555802068",
+    "password": "2829",
+    "invite_code": "0RHx18"
+}
+```
+
+* Отправьте `POST /api/v1/account/login/` c номером телефона и паролем. При успешной аутентификации вы получите JWT-токен.
+
+```json
+// Пример запроса
+{
+    "phone_number": "+996555802068",
+    "password": "2829",
+}
+// Пример ответа
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5MTYwODY4MywiaWF0IjoxNjkxNTIyMjgzLCJqdGkiOiIzYTFiODc1NDM1NzU0YzE3OGY5YzlmODhjZGEwNWVmNCIsInVzZXJfaWQiOjR9.jhZdrjcR38jvwd3fG3YJCMNHx3gXPq7LPwiXvLyS5LA",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkxOTU0MjgzLCJpYXQiOjE2OTE1MjIyODMsImp0aSI6IjJjYjY4NTk2ZTkxZTRlNDU5ZmEzZjM4ODAzNmUzOGU2IiwidXNlcl9pZCI6NH0.6eSJoRwCC8xdoCToze55SWnLbx6UsraiTjMqJj2lqqk"
+}
+```
+
+#### Получение профиля:
+
+* Отправьте `GET /api/v1/account/user/<user_id>/` для получения информации о своем профиле, включая активированный инвайт-код и список пользователей, которые ввели ваш инвайт-код.
+```json
+// Пример ответа
+{
+    "phone_number": "+996555802069",
+    "invite_code": "PJdRkH",
+    "invite_users": [
+        {
+            "phone_number": "+996555802068",
+            "invite_code": "9gS5gb"
+        },
+        {
+            "phone_number": "+996555802067",
+            "invite_code": "0RHx18"
+        }
+    ]
+}
+```
+
+
+#### Ввод чужого инвайт-кода:
+
+* Отправьте `POST /api/v1/account/invite_code/` с введенным инвайт-кодом. Если инвайт-код существует, он будет связан с вашим профилем.
+```json
+// В заголовке добавьте токен 
+"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjkxOTU0MjgzLCJpYXQiOjE2OTE1MjIyODMsImp0aSI6IjJjYjY4NTk2ZTkxZTRlNDU5ZmEzZjM4ODAzNmUzOGU2IiwidXNlcl9pZCI6NH0.6eSJoRwCC8xdoCToze55SWnLbx6UsraiTjMqJj2lqqk"
+// Пример запроса
+{
+    "invite_code": "PJdRkH"
+}
+// Пример ответа
+{
+    "invite_code": "0RHx18"
+}
+```
+
+
+#### Получение всех пользователей:
+
+* Отправьте `GET /api/v1/account/auth/` для получения информации обо всех пользователях.
+```json
+// Пример ответа
+[
+    {
+        "phone_number": "+996555000000",
+        "invite_code": "000000",
+        "invite_users": []
+    },
+    {
+        "phone_number": "+996555802068",
+        "invite_code": "9gS5gb",
+        "invite_users": [
+            {
+                "phone_number": "+996555802069",
+                "invite_code": "PJdRkH"
+            }
+        ]
+    },
+    {
+        "phone_number": "+996555802069",
+        "invite_code": "PJdRkH",
+        "invite_users": [
+            {
+                "phone_number": "+996555802068",
+                "invite_code": "9gS5gb"
+            },
+            {
+                "phone_number": "+996555802067",
+                "invite_code": "0RHx18"
+            }
+        ]
+    },
+    {
+        "phone_number": "+996555802067",
+        "invite_code": "0RHx18",
+        "invite_users": []
+    }
+]
+```
+

@@ -87,6 +87,9 @@ compose-exec:
 gunicorn: ## Запуск проекта через gunicorn
 	poetry run gunicorn --reload --bind $(HOST):$(PORT) --workers $(WORKERS) --log-level $(LEVEL) --chdir app/ config.wsgi:application
 
+
+# Разработка без docker
+
 .PHONY: migrate
 migrate: ## Проведение миграций
 	poetry run python3 app/manage.py migrate
@@ -98,3 +101,7 @@ makemigrations: ## Создание миграций
 .PHONY: run
 run: ## Создание миграций
 	poetry run python3 app/manage.py runserver
+
+.PHONY: createsuperuser-dev
+createsuperuser-dev: ## Создание суперпользователя
+	poetry run python3 app/manage.py createsuperuser
