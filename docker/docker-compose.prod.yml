@@ -16,7 +16,6 @@ services:
     depends_on:
       - db
       - migration
-      - redis
     networks:
       - network
 
@@ -45,15 +44,6 @@ services:
     env_file:
       - .env
 
-  redis:
-    restart: unless-stopped
-    image: redis:7.0.5-alpine
-    expose:
-      - ${REDIS_PORT}
-    networks:
-      - network
-
-
   nginx:
     build: ../nginx
     volumes:
@@ -63,33 +53,6 @@ services:
       - ${NGINX_PORT}:${NGINX_PORT}
     depends_on:
       - web
-    networks:
-      - network
-
-  celery:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.prod
-    command: celery -A config worker -l info
-    depends_on:
-      - web
-    env_file:
-      - .env
-    networks:
-      - network
-
-
-  flower:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.prod
-    command: celery -A config.celery:app flower
-    depends_on:
-      - web
-    ports:
-      - ${FLOWER_PORT}:${FLOWER_PORT}
-    env_file:
-      - .env
     networks:
       - network
 

@@ -34,6 +34,12 @@ $ make migrate
 $ make createsuperuser-dev
 ```
 
+* Смотри документацию
+```bash
+swagger/
+# или 
+redoc/
+```
 
 ## Запуск через docker-compose
 Тебе понадобятся следующие инструменты
