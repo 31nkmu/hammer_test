@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
                 ('phone_number', phonenumber_field.modelfields.PhoneNumberField(max_length=128, region=None, unique=True)),
-                ('password', models.CharField(max_length=4)),
+                ('password', models.CharField(max_length=200)),
                 ('invite_code', models.CharField(blank=True, max_length=6, unique=True)),
                 ('is_staff', models.BooleanField(default=False)),
                 ('is_superuser', models.BooleanField(default=False)),

@@ -9,7 +9,7 @@ from applications.account.manager import CustomUserManager
 class CustomUser(AbstractUser):
     username = None
     phone_number = PhoneNumberField(unique=True)
-    password = models.CharField(max_length=4)
+    password = models.CharField(max_length=120)
     invite_code = models.CharField(max_length=6, blank=True, unique=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
